@@ -42,7 +42,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Indicate -DARIBCC_BUILD_TESTS:BOOL=ON to build tests
-option(ARIBCC_BUILD_TESTS "Build libaribcaption tests" OFF)
+option(ARIBCC_BUILD_TESTS "Build libaribcaption tests" ON)
 
 # Indicate -DARIBCC_SHARED_LIBRARY:BOOL=ON to build as shared library
 option(ARIBCC_SHARED_LIBRARY "Build libaribcaption as shared library" OFF)
@@ -70,6 +70,11 @@ elseif(ANDROID OR (${CMAKE_SYSTEM_NAME} STREQUAL "Android") OR ARIBCC_IS_ANDROID
     # Android, FreeType required
     set(ARIBCC_IS_ANDROID TRUE CACHE BOOL "Specify target OS is Android")
     option(ARIBCC_USE_FREETYPE "Enable FreeType text rendering backend" ON)
+elseif(ARIBCC_IS_PSVITA)
+    # PS Vita, use FreeType by default
+    set(ARIBCC_IS_PSVITA TRUE CACHE BOOL "Specify target platform is PS Vita")
+    option(ARIBCC_USE_FONTCONFIG "Enable Fontconfig font provider" OFF)
+    option(ARIBCC_USE_FREETYPE "Enable FreeType text rendering backend" ON)
 else()
     # Linux or other Unix systems, requires Fontconfig & FreeType
     option(ARIBCC_USE_FONTCONFIG "Enable Fontconfig font provider" ON)
@@ -86,6 +91,20 @@ endif()
 
 if(ARIBCC_USE_FONTCONFIG)
     find_package(Fontconfig REQUIRED)
+endif()
+
+if (ARIBCC_IS_PSVITA)
+    if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+        if(DEFINED ENV{VITASDK})
+            set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
+            set(CMAKE_INSTALL_PREFIX "/usr/local/vitasdk/arm-vita-eabi")
+        else()
+            message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
+        endif()
+    endif()
+    include("/usr/local/vitasdk/share/vita.cmake" REQUIRED)
+    set(FREETYPE_INCLUDE_DIRS "/usr/local/vitasdk/arm-vita-eabi/include/freetype2")
+    set(FREETYPE_LIBRARIES freetype)
 endif()
 
 function(import_embedded_freetype)
@@ -122,7 +141,7 @@ function(import_embedded_freetype)
     endif()
 endfunction()
 
-if(ARIBCC_USE_FREETYPE AND (NOT ARIBCC_USE_EMBEDDED_FREETYPE))
+if(ARIBCC_USE_FREETYPE AND (NOT ARIBCC_USE_EMBEDDED_FREETYPE) AND (NOT ARIBCC_IS_PSVITA))
     # Try Use system-wide installed freetype
     find_package(Freetype)
     if(NOT FREETYPE_FOUND)
@@ -226,6 +245,8 @@ if(NOT ARIBCC_NO_RENDERER)
         src/renderer/font_provider.hpp
         $<$<BOOL:${ARIBCC_IS_ANDROID}>:src/renderer/font_provider_android.cpp>
         $<$<BOOL:${ARIBCC_IS_ANDROID}>:src/renderer/font_provider_android.hpp>
+        $<$<BOOL:${ARIBCC_IS_PSVITA}>:src/renderer/font_provider_psvita.cpp>
+        $<$<BOOL:${ARIBCC_IS_PSVITA}>:src/renderer/font_provider_psvita.hpp>
         $<$<BOOL:${ARIBCC_USE_CORETEXT}>:src/renderer/font_provider_coretext.cpp>
         $<$<BOOL:${ARIBCC_USE_CORETEXT}>:src/renderer/font_provider_coretext.hpp>
         $<$<BOOL:${ARIBCC_USE_DIRECTWRITE}>:src/renderer/font_provider_directwrite.cpp>
@@ -314,7 +335,7 @@ if(ARIBCC_NO_RTTI)
 endif()
 
 # Enable necessary SSE instruction sets for x86/x64 build on gcc/clang
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)" AND CMAKE_SYSTEM_PROCESSOR MATCHES "(x86|X86|x64|X64|amd64|AMD64|i386|i686)")
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)" AND CMAKE_SYSTEM_PROCESSOR MATCHES "(x86|X86|x64|X64|amd64|AMD64|i386|i686)" AND NOT ARIBCC_IS_PSVITA)
     target_compile_options(aribcaption
         PRIVATE
             -msse
@@ -366,6 +387,13 @@ target_link_libraries(aribcaption
         $<$<BOOL:${ARIBCC_USE_GDI_FONT}>:gdi32>
 )
 
+if (ARIBCC_IS_PSVITA)
+    target_link_libraries(aribcaption
+        PUBLIC
+            ScePvf_stub
+            freetype
+        )
+endif()
 # vcpkg uses optimized/debug keyword in XXXXX_LIBRARIES variables
 # which is incompatible with generator expressions
 if(ARIBCC_USE_FONTCONFIG)

@@ -72,6 +72,13 @@ enum class FontProviderType {
      */
     kGDI = 5,
 #endif
+
+#if defined(ARIBCC_IS_PSVITA)
+    /**
+     * FontProvider for PS Vita.
+     */
+    kPSVita = 6,
+#endif
 };
 
 /**

@@ -30,6 +30,7 @@
 #cmakedefine ARIBCC_NO_RENDERER      1
 
 #cmakedefine ARIBCC_IS_ANDROID       1
+#cmakedefine ARIBCC_IS_PSVITA       1
 
 #cmakedefine ARIBCC_USE_CORETEXT     1
 #cmakedefine ARIBCC_USE_DIRECTWRITE  1

@@ -40,6 +40,10 @@
     #include "renderer/font_provider_gdi.hpp"
 #endif
 
+#if defined(ARIBCC_IS_PSVITA)
+    #include "renderer/font_provider_psvita.hpp"
+#endif
+
 namespace aribcaption {
 
 std::unique_ptr<FontProvider> FontProvider::Create(FontProviderType type, Context& context) {
@@ -69,6 +73,11 @@ std::unique_ptr<FontProvider> FontProvider::Create(FontProviderType type, Contex
             return std::make_unique<FontProviderGDI>(context);
 #endif
 
+#if defined(ARIBCC_IS_PSVITA)
+        case FontProviderType::kPSVita:
+            return std::make_unique<FontProviderPSVita>(context);
+#endif
+
         case FontProviderType::kAuto:
         default:
 #if defined(_WIN32) && defined(ARIBCC_USE_DIRECTWRITE)
@@ -81,6 +90,8 @@ std::unique_ptr<FontProvider> FontProvider::Create(FontProviderType type, Contex
             return std::make_unique<FontProviderAndroid>(context);
 #elif defined(ARIBCC_USE_FONTCONFIG)
             return std::make_unique<FontProviderFontconfig>(context);
+#elif defined(ARIBCC_IS_PSVITA)
+            return std::make_unique<FontProviderPSVita>(context);
 #else
             static_assert(false, "No available auto-select FontProvider!");
 #endif
