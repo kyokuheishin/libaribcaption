@@ -29,6 +29,7 @@
 #include "vita2d.h"
 #include "png.h"
 #include <vector>
+#include <psp2/kernel/processmgr.h>
 
 const int frame_area_width = 960;
 const int frame_area_height = 544;
@@ -102,10 +103,6 @@ extern "C" bool png_writer_write_image_c(const char* filename, const aribcc_imag
 }
 
 int main(int argc, char* argv[]) {
-    vita2d_texture *imageTexture;
-	float rad = 0.0f;
-    vita2d_init();
-    vita2d_set_clear_color(RGBA8(0x40, 0x40, 0x40, 0xFF));
 
 #ifdef _WIN32
     UINT old_codepage = GetConsoleOutputCP();
@@ -187,6 +184,9 @@ int main(int argc, char* argv[]) {
     aribcc_renderer_free(renderer);
     aribcc_decoder_free(decoder);
     aribcc_context_free(ctx);
+
+    sceKernelDelayThread(3*1000000); // Wait for 3 seconds
+	sceKernelExitProcess(0);
 
 
 #ifdef _WIN32
