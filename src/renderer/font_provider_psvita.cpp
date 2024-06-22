@@ -116,11 +116,12 @@ auto FontProviderPSVita::GetFontFace(const std::string& font_name,
     }
 
     FontfaceInfo info;
-    info.family_name = targetScePvfFontStyleInfo.familyCode;
+    info.family_name = familyName;
     info.postscript_name = "";
     std::string base_font_path = "sa0:data/font/pvf/";
     info.filename = base_font_path + reinterpret_cast<char*>(targetScePvfFontStyleInfo.fileName);
-    info.face_index = -1;
+
+    info.face_index = 0;
     info.provider_type = FontProviderType::kPSVita;
     
     return Ok(std::move(info));    
